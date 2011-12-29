@@ -82,24 +82,16 @@ def do_iptables(port, dnsport, subnets):
         # excludes to come first.  That's why the columns are in such a non-
         # intuitive order.
         for swidth,sexclude,snet in sorted(subnets, reverse=True):
+          for proto,protoport in ('tcp',port),('udp',dnsport):
             if sexclude:
                 ipt('-A', chain, '-j', 'RETURN',
                     '--dest', '%s/%s' % (snet,swidth),
-                    '-p', 'tcp')
+                    '-p', proto)
             else:
                 ipt_ttl('-A', chain, '-j', 'REDIRECT',
                         '--dest', '%s/%s' % (snet,swidth),
-                        '-p', 'tcp',
-                        '--to-ports', str(port))
-                
-    if dnsport:
-        nslist = resolvconf_nameservers()
-        for ip in nslist:
-            ipt_ttl('-A', chain, '-j', 'REDIRECT',
-                    '--dest', '%s/32' % ip,
-                    '-p', 'udp',
-                    '--dport', '53',
-                    '--to-ports', str(dnsport))
+                        '-p', proto,
+                        '--to-ports', str(protoport))
 
 
 def ipfw_rule_exists(n):
